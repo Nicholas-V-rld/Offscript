@@ -1,9 +1,22 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import {
+  ANON_TOKEN_COOKIE,
+  anonTokenCookieOptions,
+} from "@/lib/auth/anon-token";
 import type { Database } from "@/lib/supabase/types";
 
 export async function proxy(request: NextRequest) {
+  // Mint the anonymous token here (cookies can't be written from Server
+  // Components). Setting it on the request makes it visible to the page this
+  // request renders; setting it on the response persists it to the browser.
+  let mintedAnonToken: string | null = null;
+  if (!request.cookies.get(ANON_TOKEN_COOKIE)?.value) {
+    mintedAnonToken = crypto.randomUUID();
+    request.cookies.set(ANON_TOKEN_COOKIE, mintedAnonToken);
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -32,6 +45,14 @@ export async function proxy(request: NextRequest) {
   );
 
   await supabase.auth.getUser();
+
+  if (mintedAnonToken) {
+    supabaseResponse.cookies.set(
+      ANON_TOKEN_COOKIE,
+      mintedAnonToken,
+      anonTokenCookieOptions(),
+    );
+  }
 
   return supabaseResponse;
 }

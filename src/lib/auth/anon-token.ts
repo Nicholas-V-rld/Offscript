@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
 
-const ANON_TOKEN_COOKIE = "offscript_anon_token";
+export const ANON_TOKEN_COOKIE = "offscript_anon_token";
 const ANON_TOKEN_MAX_AGE = 60 * 60 * 24 * 30;
 
-function anonTokenCookieOptions() {
+export function anonTokenCookieOptions() {
   return {
     httpOnly: true,
     sameSite: "lax" as const,
@@ -22,7 +22,13 @@ export async function getOrCreateAnonToken(): Promise<string> {
   }
 
   const token = crypto.randomUUID();
-  cookieStore.set(ANON_TOKEN_COOKIE, token, anonTokenCookieOptions());
+  try {
+    cookieStore.set(ANON_TOKEN_COOKIE, token, anonTokenCookieOptions());
+  } catch {
+    // Server Components cannot write cookies — the proxy mints the token first,
+    // so this only happens on routes the proxy doesn't cover. The caller still
+    // gets a usable token for this request; persistence happens via the proxy.
+  }
   return token;
 }
 
