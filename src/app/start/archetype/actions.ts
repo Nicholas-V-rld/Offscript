@@ -8,6 +8,7 @@ import {
   getPendingIntent,
 } from "@/lib/auth/pending-intent";
 import { createAnonClient } from "@/lib/supabase/server";
+import type { TablesInsert } from "@/lib/supabase/types";
 
 type SelectArchetypeResult =
   | { ok: true; sessionId: string }
@@ -44,16 +45,33 @@ export async function selectArchetype(
     return { ok: false, error: "That voice isn't available." };
   }
 
+  // Authenticated users skip the anonymous-first path: every session they
+  // create is owned by them from creation. The anon_token path is only for
+  // unauthenticated visitors.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const row: TablesInsert<"sessions"> = user
+    ? {
+        user_id: user.id,
+        intent_id: intentId,
+        archetype_id: archetype.id,
+        content_source: "prompted",
+        status: "draft",
+      }
+    : {
+        user_id: null,
+        intent_id: intentId,
+        archetype_id: archetype.id,
+        content_source: "prompted",
+        anon_token: token,
+        status: "draft",
+      };
+
   const { data: session, error: insertError } = await supabase
     .from("sessions")
-    .insert({
-      user_id: null,
-      intent_id: intentId,
-      archetype_id: archetype.id,
-      content_source: "prompted",
-      anon_token: token,
-      status: "draft",
-    })
+    .insert(row)
     .select("id")
     .single();
 
