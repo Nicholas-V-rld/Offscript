@@ -91,3 +91,14 @@ body {
 .font-display {
   font-family: var(--font-display);
 }
+
+/* Calm pulse for the loading dot trio — gentle, never aggressive. */
+@keyframes offscript-dot-pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}

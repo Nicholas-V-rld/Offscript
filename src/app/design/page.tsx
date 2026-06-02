@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ComponentsShowcase } from "./ComponentsShowcase";
 
 export const metadata: Metadata = {
   title: "Design tokens · Offscript",
@@ -228,6 +229,9 @@ export default function DesignPage() {
             ))}
           </div>
         </section>
+
+        {/* 5. Components */}
+        <ComponentsShowcase />
 
         <footer className="border-t border-border-subtle pt-6">
           <p className="text-xs text-text-muted">
